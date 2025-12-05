@@ -33,6 +33,7 @@ interface GroupsGridProps {
   leaders: Record<number, string>;
   groupNames: Record<number, string>;
   duplicates: Set<string>;
+  searchTerm: string;
   onLeaderChange: (index: number, value: string) => void;
   onAddParticipant: (groupIndex: number, name: string) => void;
   onRenameGroup: (index: number, name: string) => void;
@@ -51,6 +52,7 @@ export function GroupsGrid({
   leaders,
   groupNames,
   duplicates,
+  searchTerm,
   onLeaderChange,
   onAddParticipant,
   onRenameGroup,
@@ -64,7 +66,11 @@ export function GroupsGrid({
   activeId
 }: GroupsGridProps) {
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -100,6 +106,7 @@ export function GroupsGrid({
             leader={leaders[index]}
             groupName={groupNames[index]}
             duplicates={duplicates}
+            searchTerm={searchTerm}
             onLeaderChange={onLeaderChange}
             onAddParticipant={onAddParticipant}
             onRenameGroup={onRenameGroup}
@@ -132,6 +139,7 @@ function SortableGroup({
   leader,
   groupName,
   duplicates,
+  searchTerm,
   onLeaderChange,
   onAddParticipant,
   onRenameGroup,
@@ -145,6 +153,7 @@ function SortableGroup({
   leader: string;
   groupName: string;
   duplicates: Set<string>;
+  searchTerm: string;
   onLeaderChange: (index: number, value: string) => void;
   onAddParticipant: (groupIndex: number, name: string) => void;
   onRenameGroup: (index: number, name: string) => void;
@@ -201,6 +210,7 @@ function SortableGroup({
               id={participant.id}
               name={participant.name}
               isDuplicate={duplicates.has(participant.name)}
+              isMatch={searchTerm.length > 0 && participant.name.toLowerCase().includes(searchTerm.toLowerCase())}
               groupIndex={index}
               participantIndex={pIndex}
               onRename={onRenameParticipant}
@@ -224,6 +234,7 @@ function SortableItem({
   id,
   name,
   isDuplicate,
+  isMatch,
   groupIndex,
   participantIndex,
   onRename,
@@ -232,6 +243,7 @@ function SortableItem({
   id: string;
   name: string;
   isDuplicate: boolean;
+  isMatch: boolean;
   groupIndex: number;
   participantIndex: number;
   onRename: (gIndex: number, pIndex: number, name: string) => void;
@@ -252,11 +264,15 @@ function SortableItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  let bgClass = "hover:bg-gray-50 dark:hover:bg-gray-800";
+  if (isDuplicate) bgClass = "bg-red-100 dark:bg-red-900/30";
+  if (isMatch) bgClass = "bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 ring-inset";
+
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center gap-2 rounded p-1 hover:bg-gray-50 dark:hover:bg-gray-800 ${isDuplicate ? 'bg-red-100 dark:bg-red-900/30' : ''}`}
+      className={`group flex items-center gap-2 rounded p-1 ${bgClass}`}
     >
       <button
         {...attributes}
@@ -267,7 +283,7 @@ function SortableItem({
       </button>
       <input
         type="text"
-        className={`flex-1 bg-transparent text-sm focus:outline-none ${isDuplicate ? 'text-red-700 font-medium dark:text-red-300' : 'text-gray-600 focus:text-gray-900 dark:text-gray-400 dark:focus:text-gray-200'}`}
+        className={`flex-1 bg-transparent text-sm focus:outline-none ${isDuplicate ? 'text-red-700 font-medium dark:text-red-300' : 'text-gray-600 focus:text-gray-900 dark:text-gray-400 dark:focus:text-gray-200'} ${isMatch ? 'font-bold text-gray-900 dark:text-gray-100' : ''}`}
         value={name}
         onChange={(e) => onRename(groupIndex, participantIndex, e.target.value)}
       />

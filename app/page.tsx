@@ -11,7 +11,7 @@ import { StatsDashboard } from "@/components/StatsDashboard";
 import { HistoryPanel, type HistoryItem } from "@/components/HistoryPanel";
 import { generateGroups } from "./actions";
 import { verifyDistribution, balanceGroups } from "@/lib/utils";
-import { AlertCircle, History } from "lucide-react";
+import { AlertCircle, History, Search } from "lucide-react";
 import { DragStartEvent, DragOverEvent, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Participant } from "@/lib/types";
@@ -30,6 +30,7 @@ export default function Home() {
   const [isPending, startTransition] = useTransition();
   const [mounted, setMounted] = useState(false);
   const [columns, setColumns] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Load from local storage on mount
   useEffect(() => {
@@ -489,9 +490,20 @@ export default function Home() {
 
         <StatsDashboard groups={groups.map(g => g.map(p => p.name))} onBalance={handleBalance} />
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-md">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+              placeholder="Rechercher un participant..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           <ExportMenu groups={groups.map(g => g.map(p => p.name))} leaders={leaders} />
-
         </div>
 
         <GroupsGrid
@@ -499,6 +511,7 @@ export default function Home() {
           leaders={leaders}
           groupNames={groupNames}
           duplicates={duplicates}
+          searchTerm={searchTerm}
           onLeaderChange={handleLeaderChange}
           onAddParticipant={handleAddParticipant}
           onRenameGroup={handleRenameGroup}
