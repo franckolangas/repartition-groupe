@@ -70,3 +70,14 @@ export function balanceGroups<T>(groups: T[][]): T[][] {
 
   return newGroups;
 }
+
+export const GROUP_COLORS = [
+  { border: 'border-red-500', bg: 'bg-red-50', darkBg: 'dark:bg-red-900/20', text: 'text-red-700', darkText: 'dark:text-red-300', ring: 'focus:ring-red-500' },
+  { border: 'border-orange-500', bg: 'bg-orange-50', darkBg: 'dark:bg-orange-900/20', text: 'text-orange-700', darkText: 'dark:text-orange-300', ring: 'focus:ring-orange-500' },
+  { border: 'border-yellow-500', bg: 'bg-yellow-50', darkBg: 'dark:bg-yellow-900/20', text: 'text-yellow-700', darkText: 'dark:text-yellow-300', ring: 'focus:ring-yellow-500' },
+  { border: 'border-green-500', bg: 'bg-green-50', darkBg: 'dark:bg-green-900/20', text: 'text-green-700', darkText: 'dark:text-green-300', ring: 'focus:ring-green-500' },
+  { border: 'border-cyan-500', bg: 'bg-cyan-50', darkBg: 'dark:bg-cyan-900/20', text: 'text-cyan-700', darkText: 'dark:text-cyan-300', ring: 'focus:ring-cyan-500' },
+  { border: 'border-blue-500', bg: 'bg-blue-50', darkBg: 'dark:bg-blue-900/20', text: 'text-blue-700', darkText: 'dark:text-blue-300', ring: 'focus:ring-blue-500' },
+  { border: 'border-purple-500', bg: 'bg-purple-50', darkBg: 'dark:bg-purple-900/20', text: 'text-purple-700', darkText: 'dark:text-purple-300', ring: 'focus:ring-purple-500' },
+  { border: 'border-pink-500', bg: 'bg-pink-50', darkBg: 'dark:bg-pink-900/20', text: 'text-pink-700', darkText: 'dark:text-pink-300', ring: 'focus:ring-pink-500' },
+];

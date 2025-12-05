@@ -374,6 +374,37 @@ export default function Home() {
     addToHistory(balanced, leaders);
   };
 
+  const handleDeleteParticipant = (groupIndex: number, participantIndex: number) => {
+    setGroups((prev) => {
+      const newGroups = [...prev];
+      newGroups[groupIndex] = [...newGroups[groupIndex]];
+      newGroups[groupIndex].splice(participantIndex, 1);
+
+      // Update history? Maybe not for every single deletion if user is cleaning up duplicates.
+      // But deleting a person is significant. Let's save history.
+      addToHistory(newGroups, leaders);
+      return newGroups;
+    });
+  };
+
+  // Calculate duplicates
+  const allParticipants = groups.flat();
+  const nameCounts = new Map<string, number>();
+  allParticipants.forEach(p => {
+    const name = p.name.trim().toLowerCase();
+    if (name) {
+      nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+    }
+  });
+
+  const duplicates = new Set<string>();
+  allParticipants.forEach(p => {
+    const name = p.name.trim().toLowerCase();
+    if (name && (nameCounts.get(name) || 0) > 1) {
+      duplicates.add(p.name); // Add exact name to match in UI
+    }
+  });
+
   if (!mounted) return null; // Prevent hydration mismatch
 
   return (
@@ -467,11 +498,13 @@ export default function Home() {
           groups={groups}
           leaders={leaders}
           groupNames={groupNames}
+          duplicates={duplicates}
           onLeaderChange={handleLeaderChange}
           onAddParticipant={handleAddParticipant}
           onRenameGroup={handleRenameGroup}
           onRenameParticipant={handleRenameParticipant}
           onDeleteGroup={handleDeleteGroup}
+          onDeleteParticipant={handleDeleteParticipant}
           onAddGroup={handleAddGroup}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}

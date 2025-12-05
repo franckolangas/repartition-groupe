@@ -26,16 +26,19 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { Participant } from "@/lib/types";
+import { GROUP_COLORS } from "@/lib/utils";
 
 interface GroupsGridProps {
   groups: Participant[][];
   leaders: Record<number, string>;
   groupNames: Record<number, string>;
+  duplicates: Set<string>;
   onLeaderChange: (index: number, value: string) => void;
   onAddParticipant: (groupIndex: number, name: string) => void;
   onRenameGroup: (index: number, name: string) => void;
   onRenameParticipant: (groupIndex: number, participantIndex: number, name: string) => void;
   onDeleteGroup: (index: number) => void;
+  onDeleteParticipant: (groupIndex: number, participantIndex: number) => void;
   onAddGroup: () => void;
   onDragEnd: (event: DragEndEvent) => void;
   onDragOver: (event: DragOverEvent) => void;
@@ -47,11 +50,13 @@ export function GroupsGrid({
   groups,
   leaders,
   groupNames,
+  duplicates,
   onLeaderChange,
   onAddParticipant,
   onRenameGroup,
   onRenameParticipant,
   onDeleteGroup,
+  onDeleteParticipant,
   onAddGroup,
   onDragEnd,
   onDragOver,
@@ -94,11 +99,13 @@ export function GroupsGrid({
             group={group}
             leader={leaders[index]}
             groupName={groupNames[index]}
+            duplicates={duplicates}
             onLeaderChange={onLeaderChange}
             onAddParticipant={onAddParticipant}
             onRenameGroup={onRenameGroup}
             onRenameParticipant={onRenameParticipant}
             onDeleteGroup={onDeleteGroup}
+            onDeleteParticipant={onDeleteParticipant}
           />
         ))}
 
@@ -124,29 +131,34 @@ function SortableGroup({
   group,
   leader,
   groupName,
+  duplicates,
   onLeaderChange,
   onAddParticipant,
   onRenameGroup,
   onRenameParticipant,
   onDeleteGroup,
+  onDeleteParticipant,
 }: {
   id: string;
   index: number;
   group: Participant[];
   leader: string;
   groupName: string;
+  duplicates: Set<string>;
   onLeaderChange: (index: number, value: string) => void;
   onAddParticipant: (groupIndex: number, name: string) => void;
   onRenameGroup: (index: number, name: string) => void;
   onRenameParticipant: (groupIndex: number, participantIndex: number, name: string) => void;
   onDeleteGroup: (index: number) => void;
+  onDeleteParticipant: (groupIndex: number, participantIndex: number) => void;
 }) {
   const { setNodeRef } = useSortable({ id });
+  const color = GROUP_COLORS[index % GROUP_COLORS.length];
 
   return (
     <div
       ref={setNodeRef}
-      className="flex flex-col rounded-lg border border-gray-200 p-4 dark:border-gray-800"
+      className={`flex flex-col rounded-lg border p-4 ${color.border} ${color.bg} ${color.darkBg}`}
     >
       <div className="mb-3 flex items-center justify-between">
         <input
@@ -188,9 +200,11 @@ function SortableGroup({
               key={participant.id}
               id={participant.id}
               name={participant.name}
+              isDuplicate={duplicates.has(participant.name)}
               groupIndex={index}
               participantIndex={pIndex}
               onRename={onRenameParticipant}
+              onDelete={() => onDeleteParticipant(index, pIndex)}
             />
           ))}
         </ul>
@@ -209,15 +223,19 @@ function SortableGroup({
 function SortableItem({
   id,
   name,
+  isDuplicate,
   groupIndex,
   participantIndex,
   onRename,
+  onDelete,
 }: {
   id: string;
   name: string;
+  isDuplicate: boolean;
   groupIndex: number;
   participantIndex: number;
   onRename: (gIndex: number, pIndex: number, name: string) => void;
+  onDelete: () => void;
 }) {
   const {
     attributes,
@@ -238,7 +256,7 @@ function SortableItem({
     <li
       ref={setNodeRef}
       style={style}
-      className="group flex items-center gap-2 rounded p-1 hover:bg-gray-50 dark:hover:bg-gray-800"
+      className={`group flex items-center gap-2 rounded p-1 hover:bg-gray-50 dark:hover:bg-gray-800 ${isDuplicate ? 'bg-red-100 dark:bg-red-900/30' : ''}`}
     >
       <button
         {...attributes}
@@ -249,10 +267,17 @@ function SortableItem({
       </button>
       <input
         type="text"
-        className="flex-1 bg-transparent text-sm text-gray-600 focus:outline-none focus:text-gray-900 dark:text-gray-400 dark:focus:text-gray-200"
+        className={`flex-1 bg-transparent text-sm focus:outline-none ${isDuplicate ? 'text-red-700 font-medium dark:text-red-300' : 'text-gray-600 focus:text-gray-900 dark:text-gray-400 dark:focus:text-gray-200'}`}
         value={name}
         onChange={(e) => onRename(groupIndex, participantIndex, e.target.value)}
       />
+      <button
+        onClick={onDelete}
+        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+        title="Supprimer"
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
     </li>
   );
 }
