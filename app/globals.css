@@ -30,9 +30,9 @@ body {
     background: white;
     color: black;
   }
-  
+
   /* Hide everything by default */
-  body > * {
+  body>* {
     display: none;
   }
 
@@ -44,26 +44,33 @@ body {
   }
 
   /* Hide inputs, buttons, and other non-essential elements */
-  main > div > div:first-child, /* Header */
-  main > div > div:nth-child(2), /* Input section */
+  main>div>div:first-child,
+  /* Header */
+  main>div>div:nth-child(2),
+  /* Input section */
   button,
   .print\:hidden {
     display: none !important;
   }
 
   /* Ensure the grid is visible and formatted for print */
-  main > div > div:last-child { /* GroupsGrid container */
+  main>div>div:last-child {
+    /* GroupsGrid container */
     display: block !important;
   }
-  
+
   /* Reset grid layout for print to avoid breaking pages awkwardly */
   .grid {
     display: block !important;
   }
-  
-  .grid > div {
+
+  .grid>div {
     break-inside: avoid;
     margin-bottom: 1rem;
     border: 1px solid #ddd;
   }
+}
+
+.bg-white {
+  background-color: #080808;
 }
