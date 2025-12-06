@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useMemo } from "react";
 import { ParticipantsInput } from "@/components/ParticipantsInput";
 import { GroupNumberInput } from "@/components/GroupNumberInput";
 import { ShuffleButton } from "@/components/ShuffleButton";
@@ -414,23 +414,27 @@ export default function Home() {
     });
   };
 
-  // Calculate duplicates
-  const allParticipants = groups.flat();
-  const nameCounts = new Map<string, number>();
-  allParticipants.forEach(p => {
-    const name = p.name.trim().toLowerCase();
-    if (name) {
-      nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
-    }
-  });
+  // Calculate duplicates - wrapped in useMemo to ensure reactive updates
+  const duplicates = useMemo(() => {
+    const allParticipants = groups.flat();
+    const nameCounts = new Map<string, number>();
+    allParticipants.forEach(p => {
+      const name = p.name.trim().toLowerCase();
+      if (name) {
+        nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+      }
+    });
 
-  const duplicates = new Set<string>();
-  allParticipants.forEach(p => {
-    const name = p.name.trim().toLowerCase();
-    if (name && (nameCounts.get(name) || 0) > 1) {
-      duplicates.add(p.name); // Add exact name to match in UI
-    }
-  });
+    const duplicateSet = new Set<string>();
+    allParticipants.forEach(p => {
+      const name = p.name.trim().toLowerCase();
+      if (name && (nameCounts.get(name) || 0) > 1) {
+        duplicateSet.add(p.name); // Add exact name to match in UI
+      }
+    });
+
+    return duplicateSet;
+  }, [groups]);
 
   const handleReset = () => {
     if (confirm("Êtes-vous sûr de vouloir tout réinitialiser ? Cette action est irréversible et effacera toutes les données (participants, groupes, historique, etc.).")) {

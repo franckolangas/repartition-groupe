@@ -12,8 +12,6 @@ export async function generateGroups(participants: any[], groupCount: number): P
 }
 
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface EmailPayload {
   to: string;
   subject: string;
@@ -25,6 +23,8 @@ export async function sendBatchEmails(batch: EmailPayload[]) {
   if (!process.env.RESEND_API_KEY) {
     return { success: false, error: "Clé API Resend manquante (RESEND_API_KEY)" };
   }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const results = [];
 

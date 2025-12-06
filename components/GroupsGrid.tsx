@@ -27,6 +27,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { Participant } from "@/lib/types";
 import { GROUP_COLORS } from "@/lib/utils";
+import { ShareButtons } from "./ShareButtons";
 
 interface GroupsGridProps {
   groups: Participant[][];
@@ -221,6 +222,13 @@ function SortableGroup({
       </SortableContext>
 
       <div className="mt-auto border-t border-gray-100 pt-3 dark:border-gray-800">
+        <div className="mb-3">
+          <ShareButtons
+            groupName={groupName || `Groupe ${index + 1}`}
+            leader={leader || ""}
+            participants={group}
+          />
+        </div>
         <div className="mb-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span className="font-medium">{group.length} participant{group.length > 1 ? 's' : ''}</span>
         </div>

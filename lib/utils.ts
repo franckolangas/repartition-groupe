@@ -81,3 +81,18 @@ export const GROUP_COLORS = [
   { border: 'border-purple-500', bg: 'bg-purple-50', darkBg: 'dark:bg-purple-900/20', text: 'text-purple-700', darkText: 'dark:text-purple-300', ring: 'focus:ring-purple-500' },
   { border: 'border-pink-500', bg: 'bg-pink-50', darkBg: 'dark:bg-pink-900/20', text: 'text-pink-700', darkText: 'dark:text-pink-300', ring: 'focus:ring-pink-500' },
 ];
+
+export function formatGroupForSharing(groupName: string, leader: string, participants: { name: string }[]): string {
+  let message = `📋 ${groupName}\n`;
+
+  if (leader && leader.trim()) {
+    message += `👤 Responsable: ${leader}\n`;
+  }
+
+  message += `\n👥 Participants (${participants.length}):\n`;
+  participants.forEach((p, index) => {
+    message += `${index + 1}. ${p.name}\n`;
+  });
+
+  return message;
+}
