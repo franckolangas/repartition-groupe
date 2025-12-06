@@ -210,7 +210,7 @@ function SortableGroup({
               key={participant.id}
               id={participant.id}
               name={participant.name}
-              isDuplicate={duplicates.has(participant.name)}
+              isDuplicate={duplicates.has(participant.name.trim().toLowerCase())}
               isMatch={searchTerm.length > 0 && participant.name.toLowerCase().includes(searchTerm.toLowerCase())}
               groupIndex={index}
               participantIndex={pIndex}

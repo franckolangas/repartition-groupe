@@ -11,7 +11,7 @@ import { StatsDashboard } from "@/components/StatsDashboard";
 import { HistoryPanel, type HistoryItem } from "@/components/HistoryPanel";
 import { generateGroups } from "./actions";
 import { verifyDistribution, balanceGroups } from "@/lib/utils";
-import { AlertCircle, History, Search, RotateCcw } from "lucide-react";
+import { AlertCircle, History, Search, RotateCcw, Trash2 } from "lucide-react";
 import { DragStartEvent, DragOverEvent, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Participant } from "@/lib/types";
@@ -414,10 +414,36 @@ export default function Home() {
     });
   };
 
+  const handleRemoveDuplicates = () => {
+    if (!confirm("Voulez-vous supprimer tous les doublons ? Seule la première occurrence de chaque participant sera conservée.")) {
+      return;
+    }
+
+    const seenNames = new Map<string, boolean>();
+    const newGroups = groups.map(group => {
+      return group.filter(participant => {
+        const normalizedName = participant.name.trim().toLowerCase();
+        if (!normalizedName) return true; // Keep empty names
+
+        if (seenNames.has(normalizedName)) {
+          return false; // Remove duplicate
+        }
+
+        seenNames.set(normalizedName, true);
+        return true; // Keep first occurrence
+      });
+    });
+
+    setGroups(newGroups);
+    addToHistory(newGroups, leaders);
+  };
+
   // Calculate duplicates - wrapped in useMemo to ensure reactive updates
   const duplicates = useMemo(() => {
     const allParticipants = groups.flat();
     const nameCounts = new Map<string, number>();
+
+    // Count occurrences of normalized names
     allParticipants.forEach(p => {
       const name = p.name.trim().toLowerCase();
       if (name) {
@@ -425,11 +451,11 @@ export default function Home() {
       }
     });
 
+    // Store normalized names that appear more than once
     const duplicateSet = new Set<string>();
-    allParticipants.forEach(p => {
-      const name = p.name.trim().toLowerCase();
-      if (name && (nameCounts.get(name) || 0) > 1) {
-        duplicateSet.add(p.name); // Add exact name to match in UI
+    nameCounts.forEach((count, normalizedName) => {
+      if (count > 1) {
+        duplicateSet.add(normalizedName);
       }
     });
 
@@ -563,6 +589,33 @@ export default function Home() {
                     ))}
                   </ul>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {duplicates.size > 0 && (
+          <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  Participants en double détectés
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                  <p>{duplicates.size} participant{duplicates.size > 1 ? 's' : ''} apparaî{duplicates.size > 1 ? 'ssent' : 't'} plusieurs fois dans les groupes.</p>
+                </div>
+              </div>
+              <div className="ml-3">
+                <button
+                  onClick={handleRemoveDuplicates}
+                  className="inline-flex items-center gap-2 rounded-md bg-yellow-100 px-3 py-2 text-sm font-medium text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-200 dark:hover:bg-yellow-900/50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer les doublons
+                </button>
               </div>
             </div>
           </div>
