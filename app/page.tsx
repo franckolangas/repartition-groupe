@@ -11,10 +11,12 @@ import { StatsDashboard } from "@/components/StatsDashboard";
 import { HistoryPanel, type HistoryItem } from "@/components/HistoryPanel";
 import { generateGroups } from "./actions";
 import { verifyDistribution, balanceGroups } from "@/lib/utils";
-import { AlertCircle, History, Search } from "lucide-react";
+import { AlertCircle, History, Search, RotateCcw } from "lucide-react";
 import { DragStartEvent, DragOverEvent, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Participant } from "@/lib/types";
+import { CsvImportButton } from "@/components/CsvImportButton";
+import { EmailSender } from "@/components/EmailSender";
 
 export default function Home() {
   const [participantsText, setParticipantsText] = useState("");
@@ -32,6 +34,10 @@ export default function Home() {
   const [columns, setColumns] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // New state for CSV import
+  const [importedParticipants, setImportedParticipants] = useState<Map<string, Participant>>(new Map());
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+
   // Load from local storage on mount
   useEffect(() => {
     const savedParticipants = localStorage.getItem("participantsText");
@@ -42,6 +48,7 @@ export default function Home() {
     const savedGroupNames = localStorage.getItem("groupNames");
     const savedHistory = localStorage.getItem("history");
     const savedColumns = localStorage.getItem("columns");
+    const savedImported = localStorage.getItem("importedParticipants");
 
     if (savedParticipants) setParticipantsText(savedParticipants);
     if (savedLeadersText) setLeadersText(savedLeadersText);
@@ -67,6 +74,14 @@ export default function Home() {
 
     if (savedColumns) setColumns(parseInt(savedColumns));
 
+    if (savedImported) {
+      try {
+        setImportedParticipants(new Map(JSON.parse(savedImported)));
+      } catch (e) {
+        console.error("Failed to load imported participants", e);
+      }
+    }
+
     setMounted(true);
   }, []);
 
@@ -81,7 +96,8 @@ export default function Home() {
     localStorage.setItem("groupNames", JSON.stringify(groupNames));
     localStorage.setItem("history", JSON.stringify(history));
     localStorage.setItem("columns", columns.toString());
-  }, [participantsText, leadersText, groupCount, groups, leaders, groupNames, history, columns, mounted]);
+    localStorage.setItem("importedParticipants", JSON.stringify(Array.from(importedParticipants.entries())));
+  }, [participantsText, leadersText, groupCount, groups, leaders, groupNames, history, columns, importedParticipants, mounted]);
 
   const addToHistory = (newGroups: Participant[][], newLeaders: Record<number, string>, newGroupNames?: Record<number, string>) => {
     const newItem: HistoryItem = {
@@ -134,10 +150,28 @@ export default function Home() {
       newLeaders[index] = leader;
     });
     setLeaders(newLeaders);
+  };
 
-    // Optional: Reset groups if the count changes drastically?
-    // For now, we just update the leaders and group count. 
-    // The user will likely click Shuffle next.
+  const handleImport = (participants: Participant[]) => {
+    const newMap = new Map(importedParticipants);
+    const newNames: string[] = [];
+
+    participants.forEach(p => {
+      const normalizedName = p.name.trim().toLowerCase();
+      newMap.set(normalizedName, p);
+      newNames.push(p.name);
+    });
+
+    setImportedParticipants(newMap);
+
+    // Append to text input
+    setParticipantsText(prev => {
+      const trimmed = prev.trim();
+      return trimmed ? `${trimmed}\n${newNames.join("\n")}` : newNames.join("\n");
+    });
+
+    setImportMessage(`${participants.length} participants importés depuis le fichier.`);
+    setTimeout(() => setImportMessage(null), 5000);
   };
 
   const handleShuffle = () => {
@@ -149,13 +183,19 @@ export default function Home() {
     if (participantList.length === 0) return;
 
     startTransition(async () => {
-      // Generate objects with IDs first
-      const participants = participantList.map(name => ({ id: crypto.randomUUID(), name }));
+      // Generate objects with IDs first, checking imported data
+      const participants = participantList.map(name => {
+        const normalizedName = name.trim().toLowerCase();
+        const imported = importedParticipants.get(normalizedName);
+        if (imported) {
+          // Return a copy with a NEW ID to ensure uniqueness in the grid 
+          return { ...imported, id: crypto.randomUUID(), name: name.trim() };
+        }
+        return { id: crypto.randomUUID(), name: name.trim() };
+      });
 
       const result = await generateGroups(participants, groupCount);
 
-      // Verify distribution (needs update to handle objects)
-      // We can map back to strings for verification or update verifyDistribution
       const verification = verifyDistribution(participantList, result.map(g => g.map(p => p.name)));
       if (!verification.valid) {
         setErrors(verification.errors);
@@ -222,8 +262,6 @@ export default function Home() {
     }
 
     if (activeContainer === overContainer) {
-      // Same container reordering is handled in DragEnd usually, but DragOver can do it too.
-      // For dnd-kit sortable, DragOver is mainly for moving between containers.
       return;
     }
 
@@ -307,9 +345,6 @@ export default function Home() {
   const handleRenameGroup = (index: number, name: string) => {
     setGroupNames((prev) => {
       const newNames = { ...prev, [index]: name };
-      // Debounce history saving? Or just save on blur? 
-      // For simplicity, we won't save history on every keystroke, but maybe we should?
-      // Let's not save history on rename to avoid spamming.
       return newNames;
     });
   };
@@ -319,13 +354,6 @@ export default function Home() {
       const newGroups = [...prev];
       newGroups[groupIndex] = [...newGroups[groupIndex]];
       newGroups[groupIndex][participantIndex] = { ...newGroups[groupIndex][participantIndex], name };
-      // Debounce? Or just save? Let's save for now, user won't rename 100 times a second.
-      // Actually, input onChange fires on every keystroke. This WILL spam history.
-      // We should probably only save on blur or use a debounced callback.
-      // For now, let's NOT save history on keystroke. 
-      // Ideally GroupsGrid should handle local state and only call onRename on blur.
-      // But GroupsGrid uses controlled input.
-      // Let's leave history out of rename for now to avoid performance issues.
       return newGroups;
     });
   };
@@ -381,8 +409,6 @@ export default function Home() {
       newGroups[groupIndex] = [...newGroups[groupIndex]];
       newGroups[groupIndex].splice(participantIndex, 1);
 
-      // Update history? Maybe not for every single deletion if user is cleaning up duplicates.
-      // But deleting a person is significant. Let's save history.
       addToHistory(newGroups, leaders);
       return newGroups;
     });
@@ -406,6 +432,33 @@ export default function Home() {
     }
   });
 
+  const handleReset = () => {
+    if (confirm("Êtes-vous sûr de vouloir tout réinitialiser ? Cette action est irréversible et effacera toutes les données (participants, groupes, historique, etc.).")) {
+      setParticipantsText("");
+      setLeadersText("");
+      setGroupCount(2);
+      setGroups([]);
+      setLeaders({});
+      setGroupNames({});
+      setHistory([]);
+      setImportedParticipants(new Map());
+      setErrors([]);
+      setImportMessage(null);
+      setSearchTerm("");
+
+      // Clear localStorage
+      localStorage.removeItem("participantsText");
+      localStorage.removeItem("leadersText");
+      localStorage.removeItem("groupCount");
+      localStorage.removeItem("groups");
+      localStorage.removeItem("leaders");
+      localStorage.removeItem("groupNames");
+      localStorage.removeItem("history");
+      localStorage.removeItem("columns");
+      localStorage.removeItem("importedParticipants");
+    }
+  };
+
   if (!mounted) return null; // Prevent hydration mismatch
 
   return (
@@ -420,14 +473,24 @@ export default function Home() {
               Collez vos participants et créez des groupes aléatoires en un clic.
             </p>
           </div>
-          <button
-            onClick={() => setIsHistoryOpen(true)}
-            className="flex items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            title="Historique"
-          >
-            <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Historique</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-2 rounded-md bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/50"
+              title="Tout réinitialiser"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span className="hidden sm:inline">Réinitialiser</span>
+            </button>
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="flex items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              title="Historique"
+            >
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">Historique</span>
+            </button>
+          </div>
         </div>
 
         <HistoryPanel
@@ -440,10 +503,23 @@ export default function Home() {
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-950">
           <div className="grid gap-6 md:grid-cols-2">
-            <ParticipantsInput
-              value={participantsText}
-              onChange={setParticipantsText}
-            />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Participants (un par ligne)
+                </label>
+                <CsvImportButton onImport={handleImport} />
+              </div>
+              {importMessage && (
+                <div className="text-sm text-green-600 dark:text-green-400">
+                  {importMessage}
+                </div>
+              )}
+              <ParticipantsInput
+                value={participantsText}
+                onChange={setParticipantsText}
+              />
+            </div>
             <div className="flex flex-col gap-6 h-full">
               <div className="flex-1 min-h-0">
                 <LeadersInput
@@ -503,7 +579,10 @@ export default function Home() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <ExportMenu groups={groups.map(g => g.map(p => p.name))} leaders={leaders} />
+          <div className="flex items-center gap-2">
+            <EmailSender groups={groups} leaders={leaders} groupNames={groupNames} />
+            <ExportMenu groups={groups.map(g => g.map(p => p.name))} leaders={leaders} />
+          </div>
         </div>
 
         <GroupsGrid
