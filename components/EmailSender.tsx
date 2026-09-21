@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Send, AlertCircle, CheckCircle, Loader2, XCircle } from "lucide-react";
+import { Send, AlertCircle } from "lucide-react";
 import { Participant } from "@/lib/types";
 import { sendBatchEmails } from "@/app/actions";
 
@@ -22,6 +22,12 @@ interface LogEntry {
     type: "info" | "success" | "error";
 }
 
+interface EmailResult {
+    participantId: string;
+    success: boolean;
+    error?: string;
+}
+
 export function EmailSender({ groups, leaders, groupNames }: EmailSenderProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -30,7 +36,7 @@ export function EmailSender({ groups, leaders, groupNames }: EmailSenderProps) {
     const [progress, setProgress] = useState(0);
 
     // Prepare data
-    const participantsWithEmail = groups.flat().filter(p => p.email && p.email.includes("@"));
+    const participantsWithEmail = groups.flat().filter(p => p.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email));
     const skippedCount = groups.flat().length - participantsWithEmail.length;
 
     const handleSend = async () => {
@@ -85,7 +91,7 @@ export function EmailSender({ groups, leaders, groupNames }: EmailSenderProps) {
                 let batchSuccess = 0;
                 let batchFailed = 0;
 
-                result.results.forEach((res: any) => {
+                result.results.forEach((res: EmailResult) => {
                     if (res.success) {
                         batchSuccess++;
                     } else {
@@ -132,12 +138,12 @@ export function EmailSender({ groups, leaders, groupNames }: EmailSenderProps) {
                 {!isSending && progress === 0 ? (
                     <div className="space-y-4">
                         <p className="text-gray-600 dark:text-gray-300">
-                            Vous êtes sur le point d'envoyer des emails à <strong>{participantsWithEmail.length}</strong> participants.
+                            Vous êtes sur le point d&apos;envoyer des emails à <strong>{participantsWithEmail.length}</strong> participants.
                         </p>
                         {skippedCount > 0 && (
                             <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
                                 <AlertCircle className="mr-2 inline h-4 w-4" />
-                                {skippedCount} participants n'ont pas d'email et seront ignorés.
+                                {skippedCount} participants n&apos;ont pas d&apos;email et seront ignorés.
                             </div>
                         )}
                         <div className="flex justify-end gap-3 pt-4">
@@ -153,7 +159,7 @@ export function EmailSender({ groups, leaders, groupNames }: EmailSenderProps) {
                                 className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                             >
                                 <Send className="h-4 w-4" />
-                                Confirmer l'envoi
+                                Confirmer l&apos;envoi
                             </button>
                         </div>
                     </div>

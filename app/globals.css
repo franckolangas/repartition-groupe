@@ -69,8 +69,13 @@ body {
     margin-bottom: 1rem;
     border: 1px solid #ddd;
   }
-}
 
-.bg-white {
-  background-color: #080808;
+  .print-group {
+    break-before: page;
+    min-height: 90vh;
+  }
+
+  .print-group:first-child {
+    break-before: auto;
+  }
 }

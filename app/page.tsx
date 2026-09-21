@@ -40,6 +40,7 @@ export default function Home() {
 
   // Load from local storage on mount
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
     const savedParticipants = localStorage.getItem("participantsText");
     const savedLeadersText = localStorage.getItem("leadersText");
     const savedGroupCount = localStorage.getItem("groupCount");
@@ -83,6 +84,9 @@ export default function Home() {
     }
 
     setMounted(true);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   // Save to local storage on change

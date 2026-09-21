@@ -30,8 +30,10 @@ export default function PresentationPage() {
     };
 
     useEffect(() => {
-        loadData();
-        setMounted(true);
+        const frame = window.requestAnimationFrame(() => {
+            loadData();
+            setMounted(true);
+        });
 
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === "groups" || e.key === "leaders" || e.key === "groupNames") {
@@ -40,7 +42,10 @@ export default function PresentationPage() {
         };
 
         window.addEventListener("storage", handleStorageChange);
-        return () => window.removeEventListener("storage", handleStorageChange);
+        return () => {
+            window.cancelAnimationFrame(frame);
+            window.removeEventListener("storage", handleStorageChange);
+        };
     }, []);
 
     if (!mounted) return null;

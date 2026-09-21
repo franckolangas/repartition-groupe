@@ -3,6 +3,8 @@ import Papa from "papaparse";
 import { Upload } from "lucide-react";
 import { Participant } from "@/lib/types";
 
+type CsvRow = Record<string, string | undefined>;
+
 interface CsvImportButtonProps {
     onImport: (participants: Participant[]) => void;
 }
@@ -17,13 +19,13 @@ export function CsvImportButton({ onImport }: CsvImportButtonProps) {
 
         setIsImporting(true);
 
-        Papa.parse(file, {
+        Papa.parse<CsvRow>(file, {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
                 const parsedParticipants: Participant[] = [];
 
-                results.data.forEach((row: any) => {
+                results.data.forEach((row) => {
                     // Map CSV columns to Participant fields
                     // Expected columns: Nom, Prénom, City of residence (Guest) / House church (Member), Email, Téléphone, Type, Date d'inscription, Date de validation, Présent
 
@@ -65,7 +67,7 @@ export function CsvImportButton({ onImport }: CsvImportButtonProps) {
         });
     };
 
-    const parseBoolean = (value: any): boolean => {
+    const parseBoolean = (value: string | undefined): boolean => {
         if (typeof value === "boolean") return value;
         if (!value) return false;
         const str = String(value).trim().toLowerCase();

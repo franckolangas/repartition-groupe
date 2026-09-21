@@ -1,9 +1,10 @@
 'use server';
 
 import { shuffleArray, splitIntoGroups } from "@/lib/utils";
+import { Participant } from "@/lib/types";
 import { Resend } from 'resend';
 
-export async function generateGroups(participants: any[], groupCount: number): Promise<any[][]> {
+export async function generateGroups(participants: Participant[], groupCount: number): Promise<Participant[][]> {
   if (!participants || participants.length === 0) return [];
   if (groupCount < 1) return [participants];
 
@@ -24,9 +25,11 @@ export async function sendBatchEmails(batch: EmailPayload[]) {
     return { success: false, error: "Clé API Resend manquante (RESEND_API_KEY)" };
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  if (!process.env.RESEND_FROM_EMAIL) {
+    return { success: false, error: "Adresse expéditeur manquante (RESEND_FROM_EMAIL)" };
+  }
 
-  const results = [];
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   // Resend supports batch sending via a specific endpoint or just parallel requests.
   // The SDK has `resend.batch.send`? Let's check docs or assume parallel for now.
@@ -40,7 +43,7 @@ export async function sendBatchEmails(batch: EmailPayload[]) {
   for (const email of batch) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Retraite <no-reply@repartition-app.fr>',
+        from: process.env.RESEND_FROM_EMAIL,
         to: email.to,
         subject: email.subject,
         html: email.html,
@@ -51,8 +54,9 @@ export async function sendBatchEmails(batch: EmailPayload[]) {
       } else {
         batchResults.push({ participantId: email.participantId, success: true, id: data?.id });
       }
-    } catch (e: any) {
-      batchResults.push({ participantId: email.participantId, success: false, error: e.message });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Erreur inconnue";
+        batchResults.push({ participantId: email.participantId, success: false, error: message });
     }
 
     // Rate limiting: wait 600ms between emails

@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Répartiteur de groupes
 
-## Getting Started
+Application Next.js pour créer rapidement des groupes aléatoires, les équilibrer, les modifier manuellement et partager le résultat pendant un événement.
 
-First, run the development server:
+## Fonctionnalités
+
+- Répartition aléatoire en un nombre configurable de groupes.
+- Responsables prédéfinis et responsables modifiables par groupe.
+- Import CSV avec les noms, emails et métadonnées des participants.
+- Drag & drop, ajout, suppression et renommage des participants et des groupes.
+- Détection et suppression des doublons.
+- Statistiques et équilibrage automatique des tailles.
+- Recherche dans les groupes.
+- Historique local avec restauration des répartitions précédentes.
+- Export PDF, CSV, impression et copie pour WhatsApp ou email.
+- Mode présentation sur `/presentation`.
+- Envoi individuel des groupes par email via Resend.
+
+## Installation
+
+Prérequis : Node.js 20 ou plus récent.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commandes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev    # serveur de développement
+npm run lint   # ESLint
+npm run build  # build de production
+npm start      # démarre le build de production
+```
 
-## Learn More
+## Envoi d'emails
 
-To learn more about Next.js, take a look at the following resources:
+L'envoi est facultatif. Pour l'activer, définir `RESEND_API_KEY` dans `.env.local` :
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+RESEND_API_KEY=re_xxxxxxxxx
+RESEND_FROM_EMAIL="Retraite <contact@votre-domaine-verifie.fr>"
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`RESEND_FROM_EMAIL` doit utiliser une adresse d'un domaine vérifié dans Resend. Les participants importés par CSV doivent avoir une adresse email valide. Les participants sans email sont ignorés et signalés dans la fenêtre d'envoi.
 
-## Deploy on Vercel
+## Données et confidentialité
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Les groupes, participants et historiques sont conservés dans le `localStorage` du navigateur. Aucune base de données n'est nécessaire pour le fonctionnement courant. Les emails sont envoyés côté serveur via Resend lorsque la clé API est configurée.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Limites actuelles
+
+Les tags de compétences, les QR codes, le minuteur et l'affectation selon des critères avancés restent prévus pour une prochaine version. Voir [ROADMAP.md](ROADMAP.md).

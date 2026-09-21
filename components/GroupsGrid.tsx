@@ -17,7 +17,6 @@ import {
   DropAnimation,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -127,7 +126,7 @@ export function GroupsGrid({
       </div>
 
       <DragOverlay dropAnimation={dropAnimation}>
-        {activeId ? <ItemOverlay id={activeId} /> : null}
+        {activeId ? <ItemOverlay /> : null}
       </DragOverlay>
     </DndContext>
   );
@@ -168,7 +167,7 @@ function SortableGroup({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col rounded-lg border p-4 ${color.border} ${color.bg} ${color.darkBg}`}
+      className={`print-group flex flex-col rounded-lg border p-4 ${color.border} ${color.bg} ${color.darkBg}`}
     >
       <div className="mb-3 flex items-center justify-between">
         <input
@@ -306,7 +305,7 @@ function SortableItem({
   );
 }
 
-function ItemOverlay({ id }: { id: string }) {
+function ItemOverlay() {
   return (
     <div className="flex items-center gap-2 rounded border border-blue-200 bg-blue-50 p-2 shadow-lg dark:border-blue-800 dark:bg-blue-900/50">
       <GripVertical className="h-4 w-4 text-blue-500" />

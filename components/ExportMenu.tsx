@@ -6,7 +6,6 @@ import {
     FileDown,
     Copy,
     Maximize,
-    Share2,
     Check,
     FileSpreadsheet,
     Monitor
@@ -31,22 +30,28 @@ export function ExportMenu({ groups, leaders }: ExportMenuProps) {
     const handlePDF = () => {
         const doc = new jsPDF();
 
-        const tableData = groups.map((group, index) => {
-            const leaderName = leaders[index] || "Non défini";
-            const members = group.join(", ");
-            return [
-                `Groupe ${index + 1}`,
-                leaderName,
-                group.length,
-                members
-            ];
-        });
+        groups.forEach((group, index) => {
+            if (index > 0) doc.addPage();
 
-        autoTable(doc, {
-            head: [['Groupe', 'Responsable', 'Nb', 'Membres']],
-            body: tableData,
-            styles: { fontSize: 10 },
-            headStyles: { fillColor: [41, 128, 185] },
+            const groupName = `Groupe ${index + 1}`;
+            const leaderName = leaders[index] || "Non défini";
+
+            doc.setFontSize(22);
+            doc.setTextColor(41, 128, 185);
+            doc.text(groupName, 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(70, 70, 70);
+            doc.text(`Responsable : ${leaderName}`, 14, 31);
+            doc.text(`${group.length} participant${group.length > 1 ? "s" : ""}`, 14, 38);
+
+            autoTable(doc, {
+                startY: 46,
+                head: [["N°", "Participant"]],
+                body: group.map((member, memberIndex) => [memberIndex + 1, member]),
+                styles: { fontSize: 12, cellPadding: 4 },
+                headStyles: { fillColor: [41, 128, 185] },
+                columnStyles: { 0: { cellWidth: 18 } },
+            });
         });
 
         doc.save('groupes-repartition.pdf');
@@ -74,8 +79,7 @@ export function ExportMenu({ groups, leaders }: ExportMenuProps) {
     };
 
     const handleCSV = () => {
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Groupe,Responsable,Membre\n";
+        let csvContent = "\uFEFFGroupe,Responsable,Membre\n";
 
         groups.forEach((group, index) => {
             const groupName = `Groupe ${index + 1}`;
