@@ -19,7 +19,7 @@ export function LeadersInput({ value, onChange, onApply }: LeadersInputProps) {
             <div className="mb-2 flex items-center justify-between">
                 <label
                     htmlFor="leaders-input"
-                    className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
+                    className="flex items-center gap-2 text-sm font-bold text-black dark:text-black"
                 >
                     <Users className="h-4 w-4" />
                     Responsables ({count})

@@ -14,10 +14,10 @@ export function ParticipantsInput({ value, onChange }: ParticipantsInputProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <label htmlFor="participants" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="participants" className="text-sm font-bold text-black dark:text-black">
           Participants (un par ligne)
         </label>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs font-bold text-black dark:text-black">
           {count} participant{count > 1 ? "s" : ""}
         </span>
       </div>

@@ -6,7 +6,7 @@ interface GroupNumberInputProps {
 export function GroupNumberInput({ value, onChange }: GroupNumberInputProps) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor="groupCount" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label htmlFor="groupCount" className="text-sm font-bold text-black dark:text-black">
         Nombre de groupes
       </label>
       <input

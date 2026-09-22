@@ -6,7 +6,7 @@ Application Next.js pour créer rapidement des groupes aléatoires, les équilib
 
 - Répartition aléatoire en un nombre configurable de groupes.
 - Responsables prédéfinis et responsables modifiables par groupe.
-- Import CSV avec les noms, emails et métadonnées des participants.
+- Import CSV, Excel (`.xlsx`, `.xls`) et PDF avec les noms, emails et métadonnées des participants.
 - Drag & drop, ajout, suppression et renommage des participants et des groupes.
 - Détection et suppression des doublons.
 - Statistiques et équilibrage automatique des tailles.
@@ -35,6 +35,8 @@ npm run lint   # ESLint
 npm run build  # build de production
 npm start      # démarre le build de production
 ```
+
+L'import accepte les fichiers CSV, Excel (`.xlsx`, `.xls`) et les PDF contenant du texte sélectionnable. Pour Google Sheets, téléchargez la feuille au format CSV ou Excel avant de l'importer. Les PDF scannés nécessitent une étape d'OCR et ne sont pas reconnus automatiquement.
 
 ## Envoi d'emails
 

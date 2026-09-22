@@ -539,7 +539,7 @@ export default function Home() {
           <div className="grid gap-6 md:grid-cols-2">
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                <label className="block text-sm font-bold text-black dark:text-black">
                   Participants (un par ligne)
                 </label>
                 <CsvImportButton onImport={handleImport} />
