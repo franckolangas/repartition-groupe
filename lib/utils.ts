@@ -82,6 +82,48 @@ export const GROUP_COLORS = [
   { border: 'border-pink-500', bg: 'bg-pink-50', darkBg: 'dark:bg-pink-900/20', text: 'text-pink-700', darkText: 'dark:text-pink-300', ring: 'focus:ring-pink-500' },
 ];
 
+const LEADER_ROLE_KEYWORDS = [
+  "dirigeant",
+  "dirigeante",
+  "responsable",
+  "chef de groupe",
+  "chef d'equipe",
+  "chef",
+  "leader",
+  "animateur",
+  "animatrice",
+];
+
+function normalizeRoleLabel(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+// Detects role labels such as "Dirigeant", "Responsable" or "Chef de groupe" (accent/case-insensitive).
+export function isLeaderRole(value?: string): boolean {
+  if (!value) return false;
+  const normalized = normalizeRoleLabel(value);
+  return LEADER_ROLE_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+// Parses lines like "Landry (dirigeant)" or "Hermine - responsable" typed directly in the participants list.
+export function parseParticipantLine(line: string): { name: string; isLeader: boolean } {
+  const trimmed = line.trim();
+  const match = trimmed.match(/^(.+?)\s*[(\-:–]\s*([^)]+?)\)?\s*$/);
+
+  if (match) {
+    const [, name, role] = match;
+    if (isLeaderRole(role)) {
+      return { name: name.trim(), isLeader: true };
+    }
+  }
+
+  return { name: trimmed, isLeader: false };
+}
+
 export function formatGroupForSharing(groupName: string, leader: string, participants: { name: string }[]): string {
   let message = `📋 ${groupName}\n`;
 

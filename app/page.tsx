@@ -10,7 +10,7 @@ import { LeadersInput } from "@/components/LeadersInput";
 import { StatsDashboard } from "@/components/StatsDashboard";
 import { HistoryPanel, type HistoryItem } from "@/components/HistoryPanel";
 import { generateGroups } from "./actions";
-import { verifyDistribution, balanceGroups } from "@/lib/utils";
+import { verifyDistribution, balanceGroups, isLeaderRole, parseParticipantLine } from "@/lib/utils";
 import { AlertCircle, History, Search, RotateCcw, Trash2 } from "lucide-react";
 import { DragStartEvent, DragOverEvent, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -158,33 +158,98 @@ export default function Home() {
 
   const handleImport = (participants: Participant[]) => {
     const newMap = new Map(importedParticipants);
-    const newNames: string[] = [];
+    const memberNames: string[] = [];
+    const leaderNamesFound: string[] = [];
 
     participants.forEach(p => {
       const normalizedName = p.name.trim().toLowerCase();
       newMap.set(normalizedName, p);
-      newNames.push(p.name);
+
+      // Route Dirigeant / Responsable / Chef de groupe entries to the leaders list instead of members
+      if (isLeaderRole(p.type)) {
+        leaderNamesFound.push(p.name);
+      } else {
+        memberNames.push(p.name);
+      }
     });
 
     setImportedParticipants(newMap);
 
-    // Append to text input
-    setParticipantsText(prev => {
-      const trimmed = prev.trim();
-      return trimmed ? `${trimmed}\n${newNames.join("\n")}` : newNames.join("\n");
-    });
+    if (memberNames.length > 0) {
+      setParticipantsText(prev => {
+        const trimmed = prev.trim();
+        return trimmed ? `${trimmed}\n${memberNames.join("\n")}` : memberNames.join("\n");
+      });
+    }
 
-    setImportMessage(`${participants.length} participants importés depuis le fichier.`);
-    setTimeout(() => setImportMessage(null), 5000);
+    if (leaderNamesFound.length > 0) {
+      setLeadersText(prev => {
+        const existingNames = new Set(
+          prev.split("\n").map(l => l.trim().toLowerCase()).filter(Boolean)
+        );
+        const newLeaders = leaderNamesFound.filter(
+          name => !existingNames.has(name.trim().toLowerCase())
+        );
+        if (newLeaders.length === 0) return prev;
+        const trimmed = prev.trim();
+        return trimmed ? `${trimmed}\n${newLeaders.join("\n")}` : newLeaders.join("\n");
+      });
+    }
+
+    const messageParts = [
+      `${memberNames.length} participant${memberNames.length > 1 ? "s" : ""} importé${memberNames.length > 1 ? "s" : ""}`,
+    ];
+    if (leaderNamesFound.length > 0) {
+      messageParts.push(
+        `${leaderNamesFound.length} responsable${leaderNamesFound.length > 1 ? "s" : ""} détecté${leaderNamesFound.length > 1 ? "s" : ""} (${leaderNamesFound.join(", ")})`
+      );
+    }
+    setImportMessage(messageParts.join(" · "));
+    setTimeout(() => setImportMessage(null), 6000);
   };
 
   const handleShuffle = () => {
-    const participantList = participantsText
+    const rawParticipantList = participantsText
       .split("\n")
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
 
+    if (rawParticipantList.length === 0) return;
+
+    // Detect inline role tags typed directly in the list, e.g. "Landry (dirigeant)"
+    const parsedParticipants = rawParticipantList.map(parseParticipantLine);
+    const inlineLeaders = parsedParticipants.filter((p) => p.isLeader).map((p) => p.name);
+
+    // A leader (explicit list or inline tag) can't also be shuffled in as a regular member.
+    const leaderNames = new Set(
+      [...leadersText.split("\n"), ...Object.values(leaders), ...inlineLeaders]
+        .map((l) => l.trim().toLowerCase())
+        .filter((l) => l.length > 0)
+    );
+
+    const excludedLeaders: string[] = [];
+    const participantList = parsedParticipants
+      .filter(({ name }) => {
+        const isLeader = leaderNames.has(name.trim().toLowerCase());
+        if (isLeader) excludedLeaders.push(name);
+        return !isLeader;
+      })
+      .map(({ name }) => name);
+
     if (participantList.length === 0) return;
+
+    // Surface newly detected inline leaders in the Responsables field
+    if (inlineLeaders.length > 0) {
+      setLeadersText(prev => {
+        const existingNames = new Set(
+          prev.split("\n").map(l => l.trim().toLowerCase()).filter(Boolean)
+        );
+        const newLeaders = inlineLeaders.filter(name => !existingNames.has(name.trim().toLowerCase()));
+        if (newLeaders.length === 0) return prev;
+        const trimmed = prev.trim();
+        return trimmed ? `${trimmed}\n${newLeaders.join("\n")}` : newLeaders.join("\n");
+      });
+    }
 
     startTransition(async () => {
       // Generate objects with IDs first, checking imported data
@@ -205,6 +270,12 @@ export default function Home() {
         setErrors(verification.errors);
       } else {
         setErrors([]);
+      }
+
+      if (excludedLeaders.length > 0) {
+        const uniqueExcluded = Array.from(new Set(excludedLeaders));
+        setImportMessage(`Responsables exclus des membres : ${uniqueExcluded.join(", ")}`);
+        setTimeout(() => setImportMessage(null), 5000);
       }
 
       setGroups(result);
